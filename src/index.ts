@@ -15,6 +15,8 @@ class Calculator {
     currentOperand: string;
     // Keep track of operation to be performed
     operator: string | undefined;
+    // Keep track of error
+    error: boolean;
 
     constructor(previousOperandElement: HTMLParagraphElement, currentOperandElement: HTMLParagraphElement) {
         this.previousOperandElement = previousOperandElement;
@@ -22,10 +24,15 @@ class Calculator {
         this.previousOperand = '';
         this.currentOperand = '';
         this.operator = undefined;
+        this.error = false;
     }
 
     // Form number from user input
     appendNumber(num: string) {
+        // If Error is there, remove and proceed
+        if (this.error) {
+            this.clear();
+        }
         // Allow single decimal-point(.) in the number
         if (this.currentOperand.includes('.') && num === '.') return;
         this.currentOperand += num;
@@ -35,10 +42,15 @@ class Calculator {
 
     // Choose what operation to perform
     chooseOperation(operator: string) {
+        // Do not proceed with Error
+        if (this.error) return;
         // No current operand is selected
         if (this.currentOperand === '') return
-        if (this.currentOperand) {
+        // Choosing operation without equals button
+        // Compute and then add the operator
+        if (this.previousOperand && this.currentOperand) {
             this.compute();
+            if (this.error) return;
         }
         this.operator = operator;
         this.previousOperand = this.currentOperand;
@@ -49,6 +61,7 @@ class Calculator {
 
     // Compute the result
     compute() {
+        // No operand or operator is selected
         if (this.previousOperand === '' ||
             this.currentOperand === '' ||
             this.operator === undefined) return;
@@ -75,11 +88,40 @@ class Calculator {
 
         console.log('Result ', result);
 
+        if (isNaN(result) || !isFinite(result)) {
+            this.error = true;
+            this.currentOperandElement.innerHTML = 'ERROR'
+            this.previousOperandElement.innerHTML = ''
+            this.previousOperand = '';
+            this.currentOperand = '';
+            this.operator = undefined;
+            return;
+        }
+
         this.previousOperandElement.innerHTML = '';
         this.currentOperandElement.innerHTML = result.toString();
         this.currentOperand = result.toString();
         this.previousOperand = '';
         this.operator = undefined;
+    }
+
+    // Remove single digit from end
+    deleteNum() {
+        if (this.error) {
+            this.clear();
+        }
+        this.currentOperand = this.currentOperand.slice(0, -1);
+        this.currentOperandElement.innerHTML = this.currentOperand;
+    }
+
+    // reset the display
+    clear() {
+        this.previousOperand = '';
+        this.currentOperand = '';
+        this.operator = undefined;
+        this.error = false;
+        this.currentOperandElement.innerHTML = ''
+        this.previousOperandElement.innerHTML = ''
     }
 
 }
@@ -101,4 +143,12 @@ operators.forEach((operator) => {
 
 equalsBtn.addEventListener('click', () => {
     calc.compute()
+})
+
+deleteBtn.addEventListener('click', () => {
+    calc.deleteNum()
+})
+
+clearBtn.addEventListener('click', () => {
+    calc.clear()
 })
